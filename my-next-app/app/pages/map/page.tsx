@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
+import ProtectedRoute from '@/app/components/ProtectedRoute';
 
 const cattlePositions = [
   { id: 1, name: 'Bessie', tag: '#247', lat: 37.7749, lng: -122.4194, status: 'alert', herd: 'A' },
@@ -94,6 +95,7 @@ export default function MapPage() {
   }, [filteredCattle]);
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-black text-white pt-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto pb-12">
         {/* Header */}
@@ -211,5 +213,6 @@ export default function MapPage() {
         </div>
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

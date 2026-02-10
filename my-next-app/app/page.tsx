@@ -45,7 +45,13 @@ export default function Home() {
         <div className="mt-12 flex items-center gap-4">
           <Link
             className="pointer-events-auto rounded-full bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-medium text-white transition hover:bg-white/20 border border-white/20"
+            href="/login"
+          >
+            Get Started
+          </Link>
+          <Link
             href="/pages/dashboard"
+            className="pointer-events-auto rounded-full px-6 py-3 text-sm font-medium text-white/60 transition hover:text-white"
           >
             Dashboard
           </Link>

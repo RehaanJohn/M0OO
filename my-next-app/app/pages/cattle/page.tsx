@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import ProtectedRoute from '@/app/components/ProtectedRoute';
 
 const cattleData = [
   { id: 1, name: 'Bessie', tag: '#247', collar: 'C-089', breed: 'Holstein', age: 3, gender: 'Female', herd: 'A', location: 'North Pasture', status: 'alert', health: 'Needs Attention', battery: 45, activity: 'Low', lastUpdate: '5 min ago' },
@@ -340,5 +341,6 @@ export default function CattlePage() {
         )}
       </div>
     </div>
+    </ProtectedRoute>
   );
 }

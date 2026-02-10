@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import ProtectedRoute from '@/app/components/ProtectedRoute';
 
 const alerts = [
   {
@@ -131,6 +132,7 @@ export default function AlertsPage() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white pt-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto pb-12">
         {/* Header */}
@@ -450,5 +452,6 @@ export default function AlertsPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

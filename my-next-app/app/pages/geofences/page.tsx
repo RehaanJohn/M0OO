@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet-draw/dist/leaflet.draw.css';
+import ProtectedRoute from '@/app/components/ProtectedRoute';
 
 const geofences = [
   {
@@ -216,6 +217,7 @@ export default function GeofencesPage() {
   };
 
   return (
+    <ProtectedRoute>
     <div className="min-h-screen bg-black text-white pt-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto pb-12">
         {/* Header */}
@@ -527,5 +529,6 @@ export default function GeofencesPage() {
         </div>
       )}
     </div>
+    </ProtectedRoute>
   );
 }

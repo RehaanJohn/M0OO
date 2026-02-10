@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import ProtectedRoute from '@/app/components/ProtectedRoute';
 
 const statsCards = [
   { label: 'Total Cattle', value: '150', subtext: 'tracked animals', icon: '🐮', color: 'bg-zinc-800' },
@@ -32,16 +31,15 @@ const systemLogs = [
 
 const quickActions = [
   { label: 'Locate All Cattle', icon: '🎯', color: 'bg-gray-600 hover:bg-gray-700' },
-  { label: 'View Live Map', icon: '🗺️', color: 'bg-gray-600 hover:bg-gray-700', href: '/pages/map' },
+  { label: 'View Live Map', icon: '🗺️', color: 'bg-gray-600 hover:bg-gray-700', href: '/map' },
   { label: 'Emergency Gather', icon: '🚨', color: 'bg-gray-600 hover:bg-gray-700' },
   { label: 'Generate Report', icon: '📊', color: 'bg-gray-600 hover:bg-gray-700' },
 ];
 
 export default function Dashboard() {
   return (
-    <ProtectedRoute>
-      <div className="min-h-screen bg-black text-white pt-20 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto pb-12">
+    <div className="min-h-screen bg-black text-white pt-20 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-7xl mx-auto pb-12">
         {/* Hero Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Dashboard</h1>
@@ -117,7 +115,7 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <Link href="/pages/alerts" className="w-full mt-4 py-2 text-sm text-white/40 hover:text-white hover:bg-zinc-800 rounded-lg transition-all block text-center">
+            <Link href="/alerts" className="w-full mt-4 py-2 text-sm text-white/40 hover:text-white hover:bg-zinc-800 rounded-lg transition-all block text-center">
               View all logs →
             </Link>
           </div>
@@ -183,6 +181,5 @@ export default function Dashboard() {
         </div>
       </div>
     </div>
-    </ProtectedRoute>
   );
 }
