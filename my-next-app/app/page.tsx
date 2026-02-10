@@ -4,81 +4,89 @@ import LightPillar from './components/LightPillar';
 import Link from 'next/link';
 
 export default function Home() {
+  const trustedCompanies = [
+    'AgriTech Solutions',
+    'Ranch Management Pro',
+    'LiveStock Systems',
+    'Smart Farm Technologies',
+    'Cattle Care International',
+    'Precision Ranching',
+    'Herd Analytics',
+    'FarmTech Innovations'
+  ];
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#0b0b0f] text-white">
       <LightPillar
-        className="opacity-90"
+        className="opacity-60"
         topColor="#5227FF"
         bottomColor="#FF9FFC"
-        intensity={1}
-        rotationSpeed={0.6}
-        glowAmount={0.002}
-        pillarWidth={3}
+        intensity={0.8}
+        rotationSpeed={0.4}
+        glowAmount={0.0015}
+        pillarWidth={2.5}
         pillarHeight={0.4}
-        noiseIntensity={0.5}
+        noiseIntensity={0.3}
         pillarRotation={25}
         interactive={false}
         mixBlendMode="screen"
         quality="high"
       />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(255,255,255,0.12),transparent_45%),radial-gradient(circle_at_80%_10%,rgba(140,120,255,0.2),transparent_40%),radial-gradient(circle_at_50%_90%,rgba(255,160,220,0.22),transparent_40%)]" />
-      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 py-24 text-center">
-        <div className="mb-4 flex items-center gap-3">
-          <span className="text-6xl">🐮</span>
-          <h1 className="text-7xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-            M0OO
+      <main className="relative z-10 flex min-h-screen flex-col items-center justify-center px-6 text-center">
+        <div className="mb-6">
+          <h1 className="text-6xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight">
+            Herdle
           </h1>
         </div>
-        <p className="text-xs uppercase tracking-[0.5em] text-white/60">CATTLE TRACKING SYSTEM</p>
-        <h2 className="mt-6 max-w-3xl text-balance text-4xl font-semibold leading-tight sm:text-5xl lg:text-6xl">
+        <p className="text-sm uppercase tracking-widest text-white/50 mb-8">Cattle Tracking System</p>
+        <h2 className="max-w-2xl text-2xl font-light leading-relaxed text-white/80">
           Advanced Virtual Fencing & Real-Time Herd Management
         </h2>
-        <p className="mt-6 max-w-2xl text-lg text-white/70">
-          Monitor your entire herd with GPS tracking, intelligent geofencing, and instant alerts. 
-          Keep your cattle safe and your ranch running efficiently.
-        </p>
-        <div className="mt-10 flex flex-col items-center gap-4 sm:flex-row">
+        <div className="mt-12 flex items-center gap-4">
           <Link
-            className="pointer-events-auto rounded-full bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 text-sm font-semibold text-white transition hover:from-purple-600 hover:to-pink-600 shadow-lg shadow-purple-500/50"
+            className="pointer-events-auto rounded-full bg-white/10 backdrop-blur-sm px-6 py-3 text-sm font-medium text-white transition hover:bg-white/20 border border-white/20"
             href="/dashboard"
           >
-            Go to Dashboard
+            Dashboard
           </Link>
           <Link
             href="/map"
-            className="pointer-events-auto rounded-full border border-white/30 px-8 py-4 text-sm font-semibold text-white transition hover:border-white/60 hover:bg-white/10"
+            className="pointer-events-auto rounded-full px-6 py-3 text-sm font-medium text-white/60 transition hover:text-white"
           >
-            View Live Map
+            Live Map
           </Link>
         </div>
-        
-        {/* Feature Cards */}
-        <div className="mt-20 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl">
-          <div className="pointer-events-auto backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all">
-            <div className="text-4xl mb-3">📍</div>
-            <h3 className="text-xl font-semibold mb-2">Real-Time Tracking</h3>
-            <p className="text-sm text-white/70">
-              Monitor every animal's location with GPS precision. View movement patterns and grazing habits.
-            </p>
+
+        {/* Moving ticker bar */}
+        <div className="mt-20 w-full max-w-4xl overflow-hidden">
+          <div className="flex animate-scroll whitespace-nowrap">
+            {/* Duplicate the list for seamless loop */}
+            {[...trustedCompanies, ...trustedCompanies, ...trustedCompanies].map((company, index) => (
+              <span
+                key={index}
+                className="inline-flex items-center mx-8 text-white/30 text-sm font-medium"
+              >
+                {company}
+              </span>
+            ))}
           </div>
-          
-          <div className="pointer-events-auto backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all">
-            <div className="text-4xl mb-3">🔷</div>
-            <h3 className="text-xl font-semibold mb-2">Virtual Geofencing</h3>
-            <p className="text-sm text-white/70">
-              Create custom boundaries with vibration alerts. No physical fences needed.
-            </p>
-          </div>
-          
-          <div className="pointer-events-auto backdrop-blur-xl bg-white/10 rounded-2xl p-6 border border-white/20 hover:bg-white/15 transition-all">
-            <div className="text-4xl mb-3">🔔</div>
-            <h3 className="text-xl font-semibold mb-2">Smart Alerts</h3>
-            <p className="text-sm text-white/70">
-              Get instant notifications for boundary breaches, health issues, and low battery warnings.
-            </p>
-          </div>
+          <p className="mt-4 text-xs text-white/40 text-center">Trusted by fast-growing ranches worldwide</p>
         </div>
       </main>
+
+      <style jsx>{`
+        @keyframes scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-33.333%);
+          }
+        }
+        .animate-scroll {
+          animation: scroll 30s linear infinite;
+        }
+      `}</style>
     </div>
   );
 }

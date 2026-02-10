@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "M0OO - Cattle Tracking System",
+  title: "Herdle - Cattle Tracking System",
   description: "Advanced cattle tracking and geofencing management system",
 };
 

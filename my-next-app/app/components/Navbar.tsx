@@ -22,10 +22,9 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link href="/" className="text-2xl font-bold text-white flex items-center gap-2">
-              <span className="text-3xl">🐮</span>
-              <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                M0OO
+            <Link href="/" className="text-xl font-bold text-white flex items-center gap-2">
+              <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-purple-400 bg-clip-text text-transparent tracking-wide">
+                Herdle
               </span>
             </Link>
           </div>
@@ -40,16 +39,14 @@ export default function Navbar() {
                     key={item.path}
                     href={item.path}
                     className={`
-                      px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200
-                      flex items-center gap-2
+                      px-4 py-2 rounded-md text-sm font-medium transition-all duration-200
                       ${
                         isActive
-                          ? 'bg-white/20 text-white shadow-lg shadow-purple-500/20'
-                          : 'text-white/70 hover:text-white hover:bg-white/10'
+                          ? 'text-white bg-white/10'
+                          : 'text-white/70 hover:text-white hover:bg-white/5'
                       }
                     `}
                   >
-                    <span>{item.icon}</span>
                     <span>{item.name}</span>
                   </Link>
                 );
@@ -105,16 +102,14 @@ export default function Navbar() {
                   href={item.path}
                   onClick={() => setIsOpen(false)}
                   className={`
-                    block px-4 py-3 rounded-lg text-base font-medium transition-all
-                    flex items-center gap-3
+                    block px-4 py-3 rounded-md text-base font-medium transition-all
                     ${
                       isActive
-                        ? 'bg-white/20 text-white'
-                        : 'text-white/70 hover:text-white hover:bg-white/10'
+                        ? 'bg-white/10 text-white'
+                        : 'text-white/70 hover:text-white hover:bg-white/5'
                     }
                   `}
                 >
-                  <span className="text-xl">{item.icon}</span>
                   <span>{item.name}</span>
                 </Link>
               );
