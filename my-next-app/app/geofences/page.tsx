@@ -1,6 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import 'leaflet/dist/leaflet.css';
+import 'leaflet-draw/dist/leaflet.draw.css';
 
 const geofences = [
   {
@@ -76,23 +78,155 @@ export default function GeofencesPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [selectedGeofence, setSelectedGeofence] = useState<number | null>(null);
   const [filterStatus, setFilterStatus] = useState('all');
+  const [drawingMode, setDrawingMode] = useState<'rectangle' | 'circle' | 'polygon' | null>(null);
+  const [excludeRoads, setExcludeRoads] = useState(false);
+  const [geofenceName, setGeofenceName] = useState('');
+  const [geofenceDescription, setGeofenceDescription] = useState('');
+  
+  const mapRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const drawnItemsRef = useRef<any>(null);
 
   const filteredGeofences = filterStatus === 'all'
     ? geofences
     : geofences.filter(g => g.status === filterStatus);
 
+  // Initialize map when modal opens
+  useEffect(() => {
+    if (!showCreateModal || typeof window === 'undefined' || !mapRef.current) return;
+
+    const initMap = async () => {
+      const L = (await import('leaflet')).default;
+      const leafletDraw = await import('leaflet-draw');
+
+      // Clean up existing map
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+      }
+
+      // Create map
+      const map = L.map(mapRef.current!).setView([37.7749, -122.4194], 13);
+
+      // Dark theme tile layer
+      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; OpenStreetMap contributors &copy; CARTO',
+        maxZoom: 19,
+      }).addTo(map);
+
+      mapInstanceRef.current = map;
+
+      // Initialize FeatureGroup to store drawn items
+      const drawnItems = new L.FeatureGroup();
+      map.addLayer(drawnItems);
+      drawnItemsRef.current = drawnItems;
+
+      // Add drawing controls
+      const drawControl = new L.Control.Draw({
+        position: 'topright',
+        draw: {
+          polyline: false,
+          marker: false,
+          circlemarker: false,
+          rectangle: {
+            shapeOptions: {
+              color: '#6b7280',
+              weight: 3,
+              fillOpacity: 0.2
+            }
+          },
+          circle: {
+            shapeOptions: {
+              color: '#6b7280',
+              weight: 3,
+              fillOpacity: 0.2
+            }
+          },
+          polygon: {
+            shapeOptions: {
+              color: '#6b7280',
+              weight: 3,
+              fillOpacity: 0.2
+            }
+          }
+        },
+        edit: {
+          featureGroup: drawnItems,
+          remove: true
+        }
+      });
+
+      map.addControl(drawControl);
+
+      // Handle drawn shapes
+      map.on(L.Draw.Event.CREATED, (e: any) => {
+        const layer = e.layer;
+        drawnItems.addLayer(layer);
+        
+        // Calculate area
+        let area = 0;
+        if (e.layerType === 'rectangle' || e.layerType === 'polygon') {
+          area = (L.GeometryUtil as any).geodesicArea(layer.getLatLngs()[0]);
+        } else if (e.layerType === 'circle') {
+          area = Math.PI * Math.pow(layer.getRadius(), 2);
+        }
+        
+        console.log('Geofence drawn:', {
+          type: e.layerType,
+          area: (area / 4046.86).toFixed(2) + ' acres',
+          bounds: layer.getBounds?.(),
+          center: layer.getLatLng?.()
+        });
+      });
+    };
+
+    initMap();
+
+    return () => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, [showCreateModal]);
+
+  const handleExcludeRoads = async () => {
+    if (!mapInstanceRef.current || !excludeRoads) return;
+    
+    const L = (await import('leaflet')).default;
+    
+    // Add OSM roads overlay with transparency to visualize excluded areas
+    const roadsLayer = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      opacity: 0.3,
+      className: 'roads-overlay'
+    }).addTo(mapInstanceRef.current);
+    
+    // You would integrate with Overpass API here to fetch actual road data
+    // and exclude them from the geofence area
+    console.log('Roads exclusion activated');
+  };
+
+  useEffect(() => {
+    handleExcludeRoads();
+  }, [excludeRoads]);
+
+  const startDrawing = (mode: 'rectangle' | 'circle' | 'polygon') => {
+    setDrawingMode(mode);
+    // Drawing mode is handled by leaflet-draw controls
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white pt-20 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-black text-white pt-20 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto pb-12">
         {/* Header */}
         <div className="mb-6 flex items-center justify-between">
           <div>
             <h1 className="text-4xl font-bold mb-2">Geofence Management</h1>
-            <p className="text-white/60">Create and manage virtual boundaries for your cattle</p>
+            <p className="text-white/40">Create and manage virtual boundaries for your cattle</p>
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg"
+            className="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 hover:from-gray-700 hover:to-pink-600 rounded-lg font-semibold transition-all flex items-center gap-2 shadow-lg"
           >
             <span>➕</span> Create Geofence
           </button>
@@ -100,26 +234,26 @@ export default function GeofencesPage() {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-5 border border-white/20">
+          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
             <div className="text-3xl font-bold">{geofences.length}</div>
-            <div className="text-sm text-white/60">Total Geofences</div>
+            <div className="text-sm text-white/40">Total Geofences</div>
           </div>
-          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-5 border border-white/20">
+          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
             <div className="text-3xl font-bold text-green-400">{geofences.filter(g => g.status === 'active').length}</div>
-            <div className="text-sm text-white/60">Active</div>
+            <div className="text-sm text-white/40">Active</div>
           </div>
-          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-5 border border-white/20">
+          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
             <div className="text-3xl font-bold text-blue-400">{geofences.reduce((sum, g) => sum + g.cattleCount, 0)}</div>
-            <div className="text-sm text-white/60">Total Cattle Assigned</div>
+            <div className="text-sm text-white/40">Total Cattle Assigned</div>
           </div>
-          <div className="backdrop-blur-xl bg-white/10 rounded-xl p-5 border border-white/20">
+          <div className="bg-zinc-900 rounded-xl p-5 border border-zinc-800">
             <div className="text-3xl font-bold text-yellow-400">{geofences.reduce((sum, g) => sum + g.alertsToday, 0)}</div>
-            <div className="text-sm text-white/60">Alerts Today</div>
+            <div className="text-sm text-white/40">Alerts Today</div>
           </div>
         </div>
 
         {/* Filter Bar */}
-        <div className="backdrop-blur-xl bg-white/10 rounded-xl p-4 border border-white/20 mb-6">
+        <div className="bg-zinc-900 rounded-xl p-4 border border-zinc-800 mb-6">
           <div className="flex gap-2">
             {['all', 'active', 'inactive'].map((status) => (
               <button
@@ -127,8 +261,8 @@ export default function GeofencesPage() {
                 onClick={() => setFilterStatus(status)}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                   filterStatus === status
-                    ? 'bg-purple-500 text-white'
-                    : 'text-white/70 hover:text-white hover:bg-white/10'
+                    ? 'bg-gray-600 text-white'
+                    : 'text-white/70 hover:text-white hover:bg-zinc-800'
                 }`}
               >
                 {status.charAt(0).toUpperCase() + status.slice(1)}
@@ -137,18 +271,18 @@ export default function GeofencesPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6">
           {/* Geofence List */}
-          <div className="lg:col-span-2 space-y-4">
+          <div className="space-y-4">
             <h2 className="text-xl font-bold mb-4">Geofences ({filteredGeofences.length})</h2>
             
             {filteredGeofences.map((geofence) => (
               <div
                 key={geofence.id}
-                className={`backdrop-blur-xl bg-white/10 rounded-xl p-6 border transition-all cursor-pointer ${
+                className={`bg-zinc-900 rounded-xl p-6 border transition-all cursor-pointer ${
                   selectedGeofence === geofence.id
-                    ? 'border-purple-400 bg-purple-500/20'
-                    : 'border-white/20 hover:bg-white/15'
+                    ? 'border-gray-500 bg-gray-600/20'
+                    : 'border-zinc-800 hover:border-zinc-700'
                 }`}
                 onClick={() => setSelectedGeofence(geofence.id)}
               >
@@ -159,23 +293,23 @@ export default function GeofencesPage() {
                     </div>
                     <div className="flex-1">
                       <h3 className="text-xl font-bold mb-1">{geofence.name}</h3>
-                      <p className="text-sm text-white/60 mb-3">{geofence.description}</p>
+                      <p className="text-sm text-white/40 mb-3">{geofence.description}</p>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                         <div>
-                          <div className="text-white/50 text-xs">Size</div>
+                          <div className="text-white/40 text-xs">Size</div>
                           <div className="font-semibold">{geofence.size}</div>
                         </div>
                         <div>
-                          <div className="text-white/50 text-xs">Cattle</div>
+                          <div className="text-white/40 text-xs">Cattle</div>
                           <div className="font-semibold">{geofence.cattleCount}</div>
                         </div>
                         <div>
-                          <div className="text-white/50 text-xs">Schedule</div>
+                          <div className="text-white/40 text-xs">Schedule</div>
                           <div className="font-semibold text-xs">{geofence.schedule}</div>
                         </div>
                         <div>
-                          <div className="text-white/50 text-xs">Alerts Today</div>
+                          <div className="text-white/40 text-xs">Alerts Today</div>
                           <div className={`font-semibold ${geofence.alertsToday > 0 ? 'text-yellow-400' : 'text-green-400'}`}>
                             {geofence.alertsToday}
                           </div>
@@ -197,12 +331,12 @@ export default function GeofencesPage() {
 
                 {/* Expanded Details */}
                 {selectedGeofence === geofence.id && (
-                  <div className="mt-4 pt-4 border-t border-white/10 space-y-3">
+                  <div className="mt-4 pt-4 border-t border-zinc-800 space-y-3">
                     <div className="grid grid-cols-2 gap-3 text-sm">
                       <div>
-                        <div className="text-white/50 text-xs mb-1">Vibration Intensity</div>
+                        <div className="text-white/40 text-xs mb-1">Vibration Intensity</div>
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-white/10 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-zinc-800 rounded-full overflow-hidden">
                             <div 
                               className={`h-full ${
                                 geofence.vibrationIntensity === 'Gentle' ? 'bg-green-400 w-1/3' :
@@ -215,19 +349,19 @@ export default function GeofencesPage() {
                         </div>
                       </div>
                       <div>
-                        <div className="text-white/50 text-xs mb-1">Pattern</div>
+                        <div className="text-white/40 text-xs mb-1">Pattern</div>
                         <div className="text-sm">Pulse (2s interval)</div>
                       </div>
                     </div>
 
                     <div className="flex gap-2 pt-2">
-                      <button className="flex-1 px-4 py-2 bg-purple-500 hover:bg-purple-600 rounded-lg text-sm font-semibold transition-all">
+                      <button className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-semibold transition-all">
                         Edit Settings
                       </button>
-                      <button className="flex-1 px-4 py-2 bg-blue-500 hover:bg-blue-600 rounded-lg text-sm font-semibold transition-all">
+                      <button className="flex-1 px-4 py-2 bg-gray-600 hover:bg-gray-700 rounded-lg text-sm font-semibold transition-all">
                         View on Map
                       </button>
-                      <button className="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm border border-white/20 transition-all">
+                      <button className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 rounded-lg text-sm border border-zinc-800 transition-all">
                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                         </svg>
@@ -238,83 +372,19 @@ export default function GeofencesPage() {
               </div>
             ))}
           </div>
-
-          {/* Templates Sidebar */}
-          <div className="space-y-6">
-            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
-              <h3 className="text-lg font-bold mb-4">Quick Templates</h3>
-              <div className="space-y-3">
-                {templates.map((template) => (
-                  <button
-                    key={template.id}
-                    className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-lg border border-white/10 hover:border-purple-400/50 transition-all text-left group"
-                  >
-                    <div className="flex items-center gap-3 mb-2">
-                      <div className="text-3xl">{template.icon}</div>
-                      <div className="flex-1">
-                        <div className="font-semibold group-hover:text-purple-300 transition-colors">{template.name}</div>
-                      </div>
-                    </div>
-                    <p className="text-xs text-white/60">{template.description}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
-              <h3 className="text-lg font-bold mb-4">Drawing Tools</h3>
-              <div className="space-y-2">
-                <button className="w-full px-4 py-3 bg-purple-500 hover:bg-purple-600 rounded-lg font-semibold transition-all flex items-center gap-2">
-                  <span>✏️</span> Draw Polygon
-                </button>
-                <button className="w-full px-4 py-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition-all flex items-center gap-2">
-                  <span>📏</span> Measure Distance
-                </button>
-                <button className="w-full px-4 py-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition-all flex items-center gap-2">
-                  <span>📐</span> Calculate Area
-                </button>
-              </div>
-            </div>
-
-            <div className="backdrop-blur-xl bg-white/10 rounded-xl p-6 border border-white/20">
-              <h3 className="text-lg font-bold mb-3">Automation</h3>
-              <div className="space-y-3 text-sm">
-                <div className="p-3 bg-white/5 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>🔄</span>
-                    <span className="font-semibold">Seasonal Rotation</span>
-                  </div>
-                  <p className="text-xs text-white/60">Auto-switch pastures based on season</p>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>🌦️</span>
-                    <span className="font-semibold">Weather Integration</span>
-                  </div>
-                  <p className="text-xs text-white/60">Adjust boundaries during storms</p>
-                </div>
-                <div className="p-3 bg-white/5 rounded-lg">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span>⏰</span>
-                    <span className="font-semibold">Time-Based</span>
-                  </div>
-                  <p className="text-xs text-white/60">Schedule automatic activation</p>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
       </div>
 
       {/* Create Geofence Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="backdrop-blur-xl bg-slate-900/95 rounded-2xl p-8 border border-white/20 max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-zinc-900 rounded-2xl border border-zinc-800 max-w-7xl w-full h-[90vh] flex flex-col">
+            {/* Header */}
+            <div className="flex items-center justify-between p-6 border-b border-zinc-800">
               <h2 className="text-2xl font-bold">Create New Geofence</h2>
               <button
                 onClick={() => setShowCreateModal(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-all"
+                className="p-2 hover:bg-zinc-800 rounded-lg transition-all"
               >
                 <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -322,87 +392,136 @@ export default function GeofencesPage() {
               </button>
             </div>
 
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">Geofence Name</label>
-                <input
-                  type="text"
-                  placeholder="e.g., North Pasture"
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500"
-                />
-              </div>
+            <div className="flex flex-1 overflow-hidden">
+              {/* Left Sidebar - Settings */}
+              <div className="w-80 p-6 border-r border-zinc-800 overflow-y-auto">
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Geofence Name</label>
+                    <input
+                      type="text"
+                      value={geofenceName}
+                      onChange={(e) => setGeofenceName(e.target.value)}
+                      placeholder="e.g., North Pasture"
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600 text-white"
+                    />
+                  </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Description</label>
-                <textarea
-                  placeholder="Optional description..."
-                  className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 resize-none"
-                  rows={3}
-                />
-              </div>
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Description</label>
+                    <textarea
+                      value={geofenceDescription}
+                      onChange={(e) => setGeofenceDescription(e.target.value)}
+                      placeholder="Optional description..."
+                      className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600 resize-none text-white"
+                      rows={3}
+                    />
+                  </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-2">Vibration Intensity</label>
-                  <select className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>Gentle</option>
-                    <option>Medium</option>
-                    <option>Strong</option>
-                  </select>
+                  <div>
+                    <label className="block text-sm font-medium mb-3">Drawing Tools</label>
+                    <div className="space-y-2">
+                      <div className="text-xs text-white/40 mb-2">Use the drawing tools on the map to create your geofence boundary</div>
+                      <div className="grid grid-cols-3 gap-2">
+                        <button 
+                          className="p-3 bg-zinc-800 hover:bg-gray-600 rounded-lg border border-zinc-700 transition-all flex flex-col items-center gap-1"
+                          title="Draw Rectangle"
+                        >
+                          <span className="text-xl">▭</span>
+                          <span className="text-xs">Rectangle</span>
+                        </button>
+                        <button 
+                          className="p-3 bg-zinc-800 hover:bg-gray-600 rounded-lg border border-zinc-700 transition-all flex flex-col items-center gap-1"
+                          title="Draw Circle"
+                        >
+                          <span className="text-xl">○</span>
+                          <span className="text-xs">Circle</span>
+                        </button>
+                        <button 
+                          className="p-3 bg-zinc-800 hover:bg-gray-600 rounded-lg border border-zinc-700 transition-all flex flex-col items-center gap-1"
+                          title="Draw Polygon"
+                        >
+                          <span className="text-xl">⬡</span>
+                          <span className="text-xs">Polygon</span>
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="flex items-center gap-2 p-3 bg-zinc-800 rounded-lg border border-zinc-700 cursor-pointer hover:bg-zinc-700 transition-all">
+                      <input 
+                        type="checkbox" 
+                        checked={excludeRoads}
+                        onChange={(e) => setExcludeRoads(e.target.checked)}
+                        className="rounded" 
+                      />
+                      <div>
+                        <div className="text-sm font-medium">Exclude Major Roads</div>
+                        <div className="text-xs text-white/40">Automatically exclude roads from geofence</div>
+                      </div>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Vibration Intensity</label>
+                    <select className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600 text-white">
+                      <option>Gentle</option>
+                      <option>Medium</option>
+                      <option>Strong</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium mb-2">Assign Cattle/Herds</label>
+                    <select className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-600 text-white">
+                      <option>All Cattle</option>
+                      <option>Herd A</option>
+                      <option>Herd B</option>
+                      <option>Herd C</option>
+                    </select>
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium mb-2">Pattern Type</label>
-                  <select className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>Pulse</option>
-                    <option>Continuous</option>
-                    <option>Escalating</option>
-                  </select>
+              </div>
+
+              {/* Map Container */}
+              <div className="flex-1 relative">
+                <div 
+                  ref={mapRef} 
+                  className="w-full h-full bg-black"
+                  style={{ zIndex: 0 }}
+                ></div>
+                
+                {/* Map Instructions Overlay */}
+                <div className="absolute top-4 left-4 bg-zinc-900/95 border border-zinc-800 rounded-lg p-4 max-w-xs">
+                  <h4 className="font-semibold mb-2 text-sm">How to Draw</h4>
+                  <ul className="text-xs text-white/60 space-y-1">
+                    <li>• Use the drawing tools on the right side of the map</li>
+                    <li>• Click to start drawing, click again to add points</li>
+                    <li>• Double-click to finish drawing</li>
+                    <li>• Use edit tools to modify or delete shapes</li>
+                  </ul>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <label className="block text-sm font-medium mb-2">Assign Cattle/Herds</label>
-                <select className="w-full px-4 py-2 bg-white/10 border border-white/20 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500">
-                  <option>All Cattle</option>
-                  <option>Herd A</option>
-                  <option>Herd B</option>
-                  <option>Herd C</option>
-                  <option>Custom Selection...</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-2">Alert Settings</label>
-                <div className="space-y-2">
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">Notify when cattle approaches boundary (50m)</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" defaultChecked className="rounded" />
-                    <span className="text-sm">Notify when cattle crosses boundary</span>
-                  </label>
-                  <label className="flex items-center gap-2">
-                    <input type="checkbox" className="rounded" />
-                    <span className="text-sm">Send SMS alerts</span>
-                  </label>
-                </div>
-              </div>
-
-              <div className="pt-4 flex gap-3">
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-6 py-3 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 font-semibold transition-all"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => setShowCreateModal(false)}
-                  className="flex-1 px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 rounded-lg font-semibold transition-all"
-                >
-                  Create & Draw on Map
-                </button>
-              </div>
+            {/* Footer */}
+            <div className="p-6 border-t border-zinc-800 flex gap-3">
+              <button
+                onClick={() => setShowCreateModal(false)}
+                className="px-6 py-3 bg-zinc-800 hover:bg-zinc-700 rounded-lg border border-zinc-700 font-semibold transition-all"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  console.log('Creating geofence:', { name: geofenceName, description: geofenceDescription, excludeRoads });
+                  setShowCreateModal(false);
+                }}
+                className="flex-1 px-6 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold transition-all"
+              >
+                Create Geofence
+              </button>
             </div>
           </div>
         </div>

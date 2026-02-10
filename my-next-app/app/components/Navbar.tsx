@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 
 const navItems = [
-  { name: 'Dashboard', path: '/', icon: '📊' },
+  { name: 'Dashboard', path: '/dashboard', icon: '📊' },
   { name: 'Live Map', path: '/map', icon: '🗺️' },
   { name: 'Cattle', path: '/cattle', icon: '🐄' },
   { name: 'Geofences', path: '/geofences', icon: '🔷' },
