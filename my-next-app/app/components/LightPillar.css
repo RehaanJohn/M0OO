@@ -1,0 +1,26 @@
+.light-pillar-container {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.light-pillar-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.light-pillar-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: rgba(0, 0, 0, 0.6);
+  background: radial-gradient(circle at 50% 50%, rgba(255, 255, 255, 0.8), rgba(210, 210, 210, 0.9));
+}
