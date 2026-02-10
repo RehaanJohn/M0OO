@@ -30,10 +30,10 @@ const systemLogs = [
 ];
 
 const quickActions = [
-  { label: 'Locate All Cattle', icon: '🎯', color: 'bg-purple-600 hover:bg-purple-700' },
-  { label: 'View Live Map', icon: '🗺️', color: 'bg-purple-600 hover:bg-purple-700', href: '/map' },
-  { label: 'Emergency Gather', icon: '🚨', color: 'bg-purple-600 hover:bg-purple-700' },
-  { label: 'Generate Report', icon: '📊', color: 'bg-purple-600 hover:bg-purple-700' },
+  { label: 'Locate All Cattle', icon: '🎯', color: 'bg-gray-600 hover:bg-gray-700' },
+  { label: 'View Live Map', icon: '🗺️', color: 'bg-gray-600 hover:bg-gray-700', href: '/pages/map' },
+  { label: 'Emergency Gather', icon: '🚨', color: 'bg-gray-600 hover:bg-gray-700' },
+  { label: 'Generate Report', icon: '📊', color: 'bg-gray-600 hover:bg-gray-700' },
 ];
 
 export default function Dashboard() {
@@ -102,7 +102,7 @@ export default function Dashboard() {
                         log.type === 'alert' ? 'bg-red-500/20 text-red-400' :
                         log.type === 'health' ? 'bg-yellow-500/20 text-yellow-400' :
                         log.type === 'battery' ? 'bg-orange-500/20 text-orange-400' :
-                        log.type === 'system' ? 'bg-purple-500/20 text-purple-400' :
+                        log.type === 'system' ? 'bg-gray-500/20 text-gray-400' :
                         'bg-blue-500/20 text-blue-400'
                       }`}>
                         {log.type.toUpperCase()}
@@ -115,9 +115,9 @@ export default function Dashboard() {
               ))}
             </div>
 
-            <button className="w-full mt-4 py-2 text-sm text-white/40 hover:text-white hover:bg-zinc-800 rounded-lg transition-all">
+            <Link href="/pages/alerts" className="w-full mt-4 py-2 text-sm text-white/40 hover:text-white hover:bg-zinc-800 rounded-lg transition-all block text-center">
               View all logs →
-            </button>
+            </Link>
           </div>
 
           {/* Quick Actions & Stats */}
